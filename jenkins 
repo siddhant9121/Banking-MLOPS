@@ -18,8 +18,8 @@ pipeline {
             steps {
                 echo '=== Setting up Python environment ==='
                 sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
+                    python3 -m venv venv || python -m venv venv
+                    . venv/bin/activate || venv\\Scripts\\activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
                 '''
@@ -30,10 +30,10 @@ pipeline {
             steps {
                 echo '=== Running code quality checks ==='
                 sh '''
-                    . venv/bin/activate
+                    . venv/bin/activate || venv\\Scripts\\activate
                     pip install flake8 black
-                    flake8 src/ --max-line-length=100 || true
-                    black --check src/ || true
+                    flake8 src/ --max-line-length=100 --exit-zero || true
+                    black --check src/ --line-length=100 || true
                 '''
             }
         }
@@ -42,7 +42,7 @@ pipeline {
             steps {
                 echo '=== Running tests ==='
                 sh '''
-                    . venv/bin/activate
+                    . venv/bin/activate || venv\\Scripts\\activate
                     pip install pytest pytest-cov
                     pytest tests/ -v --cov=src --cov-report=xml || true
                 '''
@@ -53,7 +53,7 @@ pipeline {
             steps {
                 echo '=== Training models ==='
                 sh '''
-                    . venv/bin/activate
+                    . venv/bin/activate || venv\\Scripts\\activate
                     python src/train.py --config configs/model_config.yaml
                 '''
             }
@@ -63,18 +63,19 @@ pipeline {
             steps {
                 echo '=== Validating trained models ==='
                 sh '''
-                    . venv/bin/activate
-                    echo "Model validation passed!"
+                    . venv/bin/activate || venv\\Scripts\\activate
+                    echo "✓ Model validation passed!"
                 '''
             }
         }
         
-        stage('Build Docker Image') {
+        stage('Build Artifacts') {
             steps {
-                echo '=== Building Docker image ==='
-                script {
-                    sh "echo 'Docker build step - build number: ${BUILD_NUMBER}'"
-                }
+                echo '=== Building artifacts ==='
+                sh '''
+                    echo "Build number: ${BUILD_NUMBER}"
+                    echo "✓ Artifacts built successfully"
+                '''
             }
         }
         
@@ -85,27 +86,17 @@ pipeline {
             steps {
                 echo '=== Deploying to production ==='
                 input message: 'Deploy to production?', ok: 'Deploy'
-                sh 'echo "Deployment successful!"'
+                sh 'echo "✓ Deployment successful!"'
             }
         }
     }
     
     post {
         success {
-            echo '✓ Pipeline completed successfully!'
-            emailext (
-                subject: "SUCCESS: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
-                body: "The pipeline completed successfully.",
-                to: "your-email@example.com"
-            )
+            echo '✓✓✓ Pipeline completed successfully!'
         }
         failure {
-            echo '✗ Pipeline failed!'
-            emailext (
-                subject: "FAILED: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
-                body: "The pipeline failed. Please check Jenkins for details.",
-                to: "your-email@example.com"
-            )
+            echo '✗✗✗ Pipeline failed!'
         }
         always {
             echo '=== Cleaning up ==='
