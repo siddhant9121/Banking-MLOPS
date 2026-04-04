@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+# Notice we use the LTS Jenkins image
+    container_name: local-jenkins
+    privileged: true
+    user: root # Running as root allows docker-in-docker commands inside the pipeline
+    ports:
+      - "8080:8080" # Jenkins Web UI
+      - "50000:50000"
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      # Mount the Docker socket so Jenkins can build our FastAPI Dockerfile!
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  banking-api-mock:
+    # This allows you to test the dockerfile locally if you want
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+    environment:
+      - PYTHONUNBUFFERED=1
+
+volumes:
+  jenkins_data:

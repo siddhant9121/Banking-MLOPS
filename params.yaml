@@ -1,4 +1,3 @@
-
 classifier:
   model_type: "resnet50"
   batch_size: 32
@@ -27,3 +26,14 @@ training:
   use_gpu: true
   random_seed: 42
   log_interval: 100
+
+pipeline:
+  manual_review_threshold: 0.80  # Predictions with confidence below 80% go to manual review
+  ocr_engine: "tesseract"        # Can be 'tesseract' or 'paddleocr'
+  temp_upload_dir: "/tmp/banking_uploads"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  title: "Banking Document Verification API"

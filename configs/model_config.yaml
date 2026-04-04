@@ -1,0 +1,39 @@
+classifier:
+  model_type: "resnet50"
+  batch_size: 32
+  learning_rate: 0.001
+  epochs: 50
+  num_classes: 12
+
+ner:
+  model_type: "bert"
+  model_name: "bert-base-uncased"
+  batch_size: 16
+  learning_rate: 0.00005
+  max_length: 512
+  epochs: 30
+
+data:
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  input_formats:
+    - "jpg"
+    - "png"
+    - "pdf"
+
+training:
+  use_gpu: true
+  random_seed: 42
+  log_interval: 100
+
+pipeline:
+  manual_review_threshold: 0.80  # Predictions with confidence below 80% go to manual review
+  ocr_engine: "tesseract"        # Can be 'tesseract' or 'paddleocr'
+  temp_upload_dir: "/tmp/banking_uploads"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  title: "Banking Document Verification API"
