@@ -35,8 +35,12 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.get("/")
-def root_health_check():
-    return {"status": "healthy", "service": app.title}
+def health_check():
+    """Health check endpoint that returns the API status."""
+    return {
+        "status": "healthy",
+        "service": app.title
+    }
 
 @app.get("/api/health")
 def api_health_check():
