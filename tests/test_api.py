@@ -34,9 +34,6 @@ def test_process_document_with_dummy_file(tmp_path):
             files={"file": ("test_doc.jpg", test_file, "image/jpeg")}
         )
     
-    # It might return a 200 with empty text (if OpenCV fails silently and gives empty text)
-    # or a 500 if the cv2 read raises an unhandled exception.
-    # We assert that the call responds rather than strictly pass/fail since standard pytesseract might missing
     assert response.status_code in [200, 500] 
     
     if response.status_code == 200:

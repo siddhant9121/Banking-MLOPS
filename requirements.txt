@@ -38,3 +38,5 @@ black>=23.7.0
 # Visualization
 matplotlib>=3.7.2
 seaborn>=0.12.2
+
+httpx >=0.34.0
