@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexBank AI KYC</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    margin: 0;
+}
+
+.container { display: flex; }
+
+.sidebar {
+    width: 220px;
+    background: #020617;
+    padding: 20px;
+    height: 100vh;
+}
+
+.sidebar li {
+    list-style: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.sidebar li:hover, .active {
+    background: #1e293b;
+    border-radius: 5px;
+}
+
+.main { flex: 1; padding: 20px; }
+
+.card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.drop-zone {
+    border: 2px dashed #38bdf8;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.drag-over {
+    background: rgba(56,189,248,0.2);
+}
+
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+.progress {
+    height: 10px;
+    background: #334155;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 10px;
+    width: 0%;
+    background: #38bdf8;
+}
+
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>NexBank</h2>
+    <ul>
+        <li class="active">KYC</li>
+        <li>Vault</li>
+        <li>Analytics</li>
+    </ul>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+<h1>AI KYC Processing</h1>
+
+<!-- Upload -->
+<div class="card">
+    <h3>Upload Document</h3>
+
+    <div class="drop-zone" id="drop-zone">
+        <p id="file-name">Drag & Drop File</p>
+        <input type="file" id="file-input" hidden>
+        <button onclick="fileInput.click()">Browse</button>
+    </div>
+
+    <div id="loading" style="display:none;">
+        <p id="step">Starting...</p>
+        <div class="progress">
+            <div class="progress-bar" id="bar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="card" id="results" style="display:none;">
+    <h3>Results</h3>
+
+    <p>Confidence: <span id="confidence">0%</span></p>
+    <p>Authenticity: <span id="auth-result">Checking...</span></p>
+
+    <button onclick="approve()">Approve</button>
+    <button onclick="flag()">Flag</button>
+    <button onclick="reject()">Reject</button>
+</div>
+
+</div>
+</div>
+
+<script>
+const dropZone = document.getElementById("drop-zone");
+const fileInput = document.getElementById("file-input");
+
+dropZone.onclick = () => fileInput.click();
+
+dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.classList.add("drag-over");
+});
+
+dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("drag-over");
+});
+
+dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("drag-over");
+    handleFile(e.dataTransfer.files[0]);
+});
+
+fileInput.addEventListener("change", e => {
+    handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+    if (!file) return;
+    document.getElementById("file-name").innerText = file.name;
+    startProcessing(file);
+}
+
+function startProcessing(file) {
+    document.getElementById("loading").style.display = "block";
+
+    const steps = [
+        "Uploading...",
+        "OCR Processing...",
+        "Analyzing Image Authenticity...",
+        "Validating Data...",
+        "Finalizing..."
+    ];
+
+    let progress = 0;
+    let stepIndex = 0;
+
+    const interval = setInterval(() => {
+        progress += 10;
+        document.getElementById("bar").style.width = progress + "%";
+
+        if (progress % 20 === 0 && stepIndex < steps.length) {
+            document.getElementById("step").innerText = steps[stepIndex++];
+        }
+
+        if (progress >= 100) {
+            clearInterval(interval);
+            showResults(file);
+        }
+    }, 400);
+}
+
+function showResults(file) {
+    document.getElementById("results").style.display = "block";
+
+    let confidence = Math.floor(Math.random() * 20) + 80;
+    document.getElementById("confidence").innerText = confidence + "%";
+
+    let resultText = "";
+    let color = "";
+
+    // Simulated AI logic
+    if (file.type.includes("png")) {
+        resultText = "REAL ✅";
+        color = "lightgreen";
+    } 
+    else if (file.size > 5000000) {
+        resultText = "SUSPICIOUS ⚠️";
+        color = "orange";
+    } 
+    else {
+        resultText = "FAKE ❌";
+        color = "red";
+    }
+
+    const authEl = document.getElementById("auth-result");
+    authEl.innerText = resultText;
+    authEl.style.color = color;
+
+    showToast("AI Verification Complete");
+}
+
+function showToast(msg) {
+    const t = document.createElement("div");
+    t.className = "toast";
+    t.innerText = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+function approve() { showToast("Approved ✅"); }
+function flag() { showToast("Flagged ⚠️"); }
+function reject() { showToast("Rejected ❌"); }
+</script>
+
+</body>
+</html>

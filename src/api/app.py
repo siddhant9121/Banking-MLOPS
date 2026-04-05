@@ -45,6 +45,9 @@ def health_check():
 @app.get("/api/health")
 def api_health_check():
     return {"status": "healthy", "service": app.title}
+@app.get("/dashboard")
+def render_dashboard():
+    return FileResponse("frontend/index.html")
 
 @app.post("/dev/process-document")
 async def process_document_endpoint(file: UploadFile = File(...)):
