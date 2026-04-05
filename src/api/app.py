@@ -35,11 +35,11 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.get("/")
-def render_dashboard():
-    return FileResponse("frontend/index.html")
+def root_health_check():
+    return {"status": "healthy", "service": app.title}
 
 @app.get("/api/health")
-def health_check():
+def api_health_check():
     return {"status": "healthy", "service": app.title}
 
 @app.post("/dev/process-document")
