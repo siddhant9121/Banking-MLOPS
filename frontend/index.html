@@ -486,22 +486,7 @@
                     <i class="ti ti-scan"></i>
                     <span>KYC Processing</span>
                 </div>
-                <div class="nav-item">
-                    <i class="ti ti-users"></i>
-                    <span>Clients</span>
-                </div>
-                <div class="nav-item">
-                    <i class="ti ti-database"></i>
-                    <span>Document Vault</span>
-                </div>
-                <div class="nav-item">
-                    <i class="ti ti-chart-pie"></i>
-                    <span>Analytics</span>
-                </div>
-                <div class="nav-item" style="margin-top: auto; border-top: 1px solid var(--card-border); border-radius: 0; padding-top: 20px;">
-                    <i class="ti ti-settings"></i>
-                    <span>Settings</span>
-                </div>
+
             </nav>
         </aside>
 
@@ -669,54 +654,57 @@
             startEngine(file);
         }
 
-        function startEngine(file) {
+        async function startEngine(file) {
             isProcessing = true;
             document.getElementById("loading-container").style.display = "block";
             dropZone.style.pointerEvents = "none";
             dropZone.style.opacity = "0.7";
 
-            const steps = [
-                { label: "Extracting Meta Information...", w: 20 },
-                { label: "Running OCR Engine...", w: 45 },
-                { label: "Detecting Holograms & Watermarks...", w: 65 },
-                { label: "Validating against Watchlists...", w: 85 },
-                { label: "Generating Final Score...", w: 100 }
-            ];
-
-            let stepIndex = 0;
-            const stepLabel = document.getElementById("step-label");
-            const progressBar = document.getElementById("progress-bar");
             const progressPercent = document.getElementById("progress-percent");
-
-            const updateStage = () => {
-                if (stepIndex >= steps.length) {
-                    setTimeout(() => finishEngine(file), 500);
-                    return;
+            const progressBar = document.getElementById("progress-bar");
+            const stepLabel = document.getElementById("step-label");
+            
+            stepLabel.innerText = "Processing via ML Engine...";
+            let currentP = 0;
+            // Fake progress while waiting for ML
+            let fakeProgress = setInterval(() => {
+                if (currentP < 85) {
+                    currentP += Math.floor(Math.random() * 5);
+                    progressBar.style.width = currentP + "%";
+                    progressPercent.innerText = currentP + "%";
                 }
+            }, 500);
 
-                const currentStep = steps[stepIndex];
-                stepLabel.innerText = currentStep.label;
-                progressBar.style.width = currentStep.w + "%";
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
                 
-                // Animate numbers
-                let currentPercent = parseInt(progressPercent.innerText);
-                let targetPercent = currentStep.w;
-                let counter = setInterval(() => {
-                    if (currentPercent >= targetPercent) {
-                        clearInterval(counter);
-                        stepIndex++;
-                        setTimeout(updateStage, Math.random() * 800 + 400); // Random delay between stages
-                    } else {
-                        currentPercent++;
-                        progressPercent.innerText = currentPercent + "%";
-                    }
-                }, 15);
-            };
-
-            updateStage();
+                // Actual API call!
+                const response = await fetch('/dev/process-document', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error("API Error");
+                const result = await response.json();
+                
+                clearInterval(fakeProgress);
+                progressBar.style.width = "100%";
+                progressPercent.innerText = "100%";
+                
+                setTimeout(() => finishEngine(file, result), 500);
+            } catch (error) {
+                console.error(error);
+                clearInterval(fakeProgress);
+                showToast("Error connecting to ML backend", "error");
+                isProcessing = false;
+                document.getElementById("loading-container").style.display = "none";
+                dropZone.style.pointerEvents = "auto";
+                dropZone.style.opacity = "1";
+            }
         }
 
-        function finishEngine(file) {
+        function finishEngine(file, result) {
             isProcessing = false;
             document.getElementById("loading-container").style.display = "none";
             dropZone.style.pointerEvents = "auto";
@@ -731,41 +719,35 @@
             document.getElementById('results-placeholder').style.display = 'none';
             document.getElementById('results-container').style.display = 'block';
 
-            // Simulate AI findings
-            let confidence = Math.floor(Math.random() * 15) + 84; // 84-98%
+            // Real AI findings from backend
             const confEl = document.getElementById("confidence-score");
-            confEl.innerText = confidence + "%";
+            // Map strictly to the new schema: 'confidence' instead of 'overall_confidence'
+            confEl.innerText = (result.confidence * 100).toFixed(1) + "%";
 
             const authEl = document.getElementById("auth-status");
             const docTypeEl = document.getElementById("doc-type");
 
-            if (file.name.toLowerCase().includes("passport")) docTypeEl.innerText = "Passport";
-            else if (file.name.toLowerCase().includes("id")) docTypeEl.innerText = "National ID";
-            else docTypeEl.innerText = "Driving License";
+            // doc_type is no longer returned in the strict schema, use prediction class
+            docTypeEl.innerText = (result.prediction === "fake" ? "Fake Document" : (result.prediction === "real" ? "Real Document" : "Unknown"));
+            authEl.innerText = result.authenticity_status || "UNKNOWN";
 
-            // Make it look dynamic based on file extension/size
-            if (file.type.includes("png")) {
-                authEl.innerText = "VERIFIED REAL";
+            // Styling based on real result
+            if (result.authenticity_status === "VERIFIED REAL") {
                 authEl.className = "result-value value-high";
                 confEl.className = "result-value value-high";
                 showToast("High confidence identity match detected.", "success");
             } 
-            else if (file.size > 3000000) {
-                confEl.innerText = "72%";
-                authEl.innerText = "SUSPICIOUS";
+            else if (result.authenticity_status === "SUSPICIOUS") {
                 authEl.className = "result-value value-suspicious";
                 confEl.className = "result-value value-suspicious";
-                showToast("Anomalies detected in document texture.", "warning");
+                showToast("Document flagged for manual review.", "warning");
             } 
             else {
-                confEl.innerText = "23%";
-                authEl.innerText = "LIKELY FAKE";
                 authEl.className = "result-value value-fake";
                 confEl.className = "result-value value-fake";
                 showToast("Security features missing. Reject recommended.", "error");
             }
 
-            // Small animation trigger
             document.getElementById("results-container").style.animation = "slideUp 0.5s ease-out";
         }
 

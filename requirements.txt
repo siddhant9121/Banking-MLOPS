@@ -8,8 +8,6 @@ numpy>=1.24.3
 pandas>=2.0.3
 
 # OCR engines
-paddleocr>=2.7.0
-paddlepaddle>=2.5.0
 pytesseract>=0.3.10
 pillow>=10.0.0
 

@@ -62,12 +62,48 @@ class NEREngine:
         else:
             results["entities"]["Name"] = None
             results["confidence_scores"]["Name"] = 0.0
+        # 5. Document Type Classification
+        doc_type = "Unknown"
+        text_lower = text.lower()
+        
+        # Aadhaar: 12 digit number pattern or keyword
+        if re.search(r'\d{4}\s?\d{4}\s?\d{4}', text) or "aadhaar" in text_lower:
+            doc_type = "Aadhaar"
+        elif "driving" in text_lower or "license" in text_lower or "licence" in text_lower:
+            doc_type = "Driving License"
+        elif "passport" in text_lower:
+            doc_type = "Passport"
+        elif "pan" in text_lower or pan_match:
+            doc_type = "PAN Card"
+            
+        results["entities"]["DocumentType"] = doc_type
+        results["confidence_scores"]["DocumentType"] = 0.95 if doc_type != "Unknown" else 0.0
 
-        # Calculate average overall confidence for routing
+        # Calculate intelligent confidence score
         valid_scores = [v for v in results["confidence_scores"].values() if v > 0]
+        
+        # Base confidence is the average of whatever fields were actually found
         if valid_scores:
-            results["overall_confidence"] = sum(valid_scores) / len(results["confidence_scores"])
+            base_conf = sum(valid_scores) / len(valid_scores)
         else:
-            results["overall_confidence"] = 0.3 # Low confidence fallback
+            base_conf = 0.3 # Low confidence fallback
+            
+        # Differentiate Real vs Fake strictly by penalizing missing mandatory attributes
+        penalty = 0.0
+        
+        # 1. Explicitly check for 'fake' keywords in the document text
+        fake_keywords = ['fake', 'dummy', 'mock', 'specimen', 'sample', 'void']
+        if any(keyword in text_lower for keyword in fake_keywords):
+            penalty += 1.0  # Instant massive penalty to guarantee classification as FAKE
+            
+        # 2. Relaxed regex for real documents prone to noisy OCR
+        if doc_type == "Aadhaar" and not re.search(r'[0-9OIl]{4}[\s-]?[0-9OIl]{4}[\s-]?[0-9OIl]{4}', text, re.IGNORECASE):
+            penalty += 0.20 # Reduced penalty for missing 12-digits due to messy OCR
+        elif doc_type == "PAN Card" and not pan_match:
+            penalty += 0.20 # Reduced penalty for messy OCR on real PAN
+        elif doc_type == "Driving License" and not dob_match:
+            penalty += 0.10 # Reduced penalty
+            
+        results["overall_confidence"] = max(0.1, base_conf - penalty)
             
         return results

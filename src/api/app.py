@@ -4,6 +4,8 @@ import logging
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
+from pydantic import BaseModel
+from typing import Dict, Any
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 import yaml
@@ -28,8 +30,11 @@ app = FastAPI(
 )
 
 pipeline = DocumentProcessingPipeline()
-TEMP_DIR = Path(config.get('pipeline', {}).get('temp_upload_dir', '/tmp/banking_uploads'))
-TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+class ProcessDocumentResponse(BaseModel):
+    prediction: str
+    confidence: float
+    authenticity_status: str
 
 # Mount static files folder
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
@@ -49,7 +54,7 @@ def api_health_check():
 def render_dashboard():
     return FileResponse("frontend/index.html")
 
-@app.post("/dev/process-document")
+@app.post("/dev/process-document", response_model=ProcessDocumentResponse)
 async def process_document_endpoint(file: UploadFile = File(...)):
     """
     Endpoint to upload an image or PDF for KYC extraction and routing.
@@ -57,28 +62,19 @@ async def process_document_endpoint(file: UploadFile = File(...)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
         
-    temp_path = TEMP_DIR / file.filename
-    
     try:
-        # Save uploaded file safely
-        with temp_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        # Save memory buffer footprint
+        file_bytes = await file.read()
             
-        logger.info(f"Received file upload: {file.filename}")
+        logger.info(f"Received file upload: {file.filename} ({len(file_bytes)} bytes)")
         
-        # Process the document using ML pipeline
-        results = pipeline.process_document(str(temp_path))
+        # Process the document using ML pipeline natively in memory
+        results = pipeline.process_document(file_bytes)
         
-        # Clean up temp file
-        temp_path.unlink()
-        
-        return JSONResponse(content=results)
+        return ProcessDocumentResponse(**results)
         
     except Exception as e:
         logger.error(f"Error processing document: {str(e)}")
-        # Clean up on error
-        if temp_path.exists():
-            temp_path.unlink()
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

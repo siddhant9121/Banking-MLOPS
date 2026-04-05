@@ -43,4 +43,6 @@ def test_process_document_with_dummy_file(tmp_path):
         data = response.json()
         assert "overall_confidence" in data
         assert "routing" in data
-        assert "MANUAL_REVIEW" in data["routing"] or "AUTO_SUCCESS" in data["routing"]
+        assert "authenticity_status" in data
+        assert data["routing"] in ["MANUAL_REVIEW", "AUTO_SUCCESS"]
+        assert data["authenticity_status"] in ["FAKE / UNRECOGNIZED", "SUSPICIOUS", "VERIFIED REAL"]

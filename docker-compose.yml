@@ -3,7 +3,7 @@ version: '3.8'
 services:
   jenkins:
     image: jenkins/jenkins:lts
-# Notice we use the LTS Jenkins image
+    # Notice we use the LTS Jenkins image
     container_name: local-jenkins
     privileged: true
     user: root # Running as root allows docker-in-docker commands inside the pipeline
@@ -22,6 +22,7 @@ services:
       - "8000:8000"
     volumes:
       - ./src:/app/src
+      - ./frontend:/app/frontend
     environment:
       - PYTHONUNBUFFERED=1
 

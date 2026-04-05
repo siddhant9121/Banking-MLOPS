@@ -23,6 +23,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy source code and configurations
 COPY configs/ /app/configs/
 COPY src/ /app/src/
+COPY frontend/ /app/frontend/
 
 # Expose API port
 EXPOSE 8000
