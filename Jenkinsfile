@@ -22,9 +22,11 @@ pipeline {
                     python3 -m venv venv || python -m venv venv
                     . venv/bin/activate || venv\\Scripts\\activate
                     pip install --upgrade pip
-                    pip install flake8 pytest pytest-cov
+                    pip install flake8 pytest pytest-cov black isort
                     # Minimal dependency install for pipeline tests
                     pip install fastapi uvicorn pyyaml
+                    black --check src/ || true
+                    isort --check-only src/ || true
                     flake8 src/ --max-line-length=100 --exit-zero || true
                     pytest tests/ -v || true
                 '''

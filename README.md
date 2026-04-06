@@ -95,15 +95,22 @@ Follow these step-by-step instructions to set up the MLOps pipeline on your loca
    ```
 
 ## 9. GitHub Actions Workflow
-The project includes an robust automated GitHub Action workflow (`.github/workflows/ci-cd.yml`):
+The project includes a robust automated GitHub Action workflow (`.github/workflows/ci-cd.yml`):
 - **Trigger:** Activates on pushes to `main` and `develop`, and Pull Requests to `main`.
-- **Test Job:** 
-   - Checks out the code and sets up Python 3.9.
-   - Restores the cached `pip` packages.
+- **Code Quality & Linting Job:**
+   - Checks code formatting utilizing `black` and `isort`.
    - Lints the codebase utilizing `flake8`.
+- **Unit & Integration Tests Job:** 
    - Executes unit testing with `pytest`.
+   - Auto-generates and archives XML test reports.
+- **ML Model Dry-Run & Validation Job:**
+   - Validates configuration structures (`params.yaml`).
+   - Verifies DVC data versioning status.
    - Runs a dry-pass of the model training script (`src/train.py`).
-- **Build Job:** Wait for tests to pass before confirming a successful build output.
+- **Build & Test Docker Image Job:** 
+   - Waits for quality checks, tests, and ML verification to pass.
+   - Builds and tags the Docker image with the specific GitHub commit SHA.
+   - Runs a temporary container to verify the image launches successfully.
 
 ## 10. Generated Artifacts
 When executing the pipeline locally or via CI/CD, the following artifacts are generated:
