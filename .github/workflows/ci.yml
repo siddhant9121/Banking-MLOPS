@@ -54,3 +54,24 @@ jobs:
         docker logs test-container || true
         docker stop test-container
         docker rm test-container
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Push to Container Registry (Mock)
+        run: |
+          echo "Tagging image and pushing to Docker Registry..."
+          echo "docker tag banking-doc-mlops:latest myregistry.com/banking-doc-mlops:${{ github.sha }}"
+          echo "docker push myregistry.com/banking-doc-mlops:${{ github.sha }}"
+
+      - name: Deploy to Kubernetes (Mock)
+        run: |
+          echo "Deploying to Kubernetes cluster..."
+          echo "kubectl apply -f k8s/deployment.yaml"
+          echo "kubectl apply -f k8s/service.yaml"
+          echo "Deployment successful! 🚀"
