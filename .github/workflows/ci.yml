@@ -10,8 +10,8 @@ jobs:
   code-quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with: { python-version: '3.9' }
       - run: pip install flake8 black isort
       - run: |
@@ -23,8 +23,8 @@ jobs:
     needs: code-quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with: { python-version: '3.9' }
       - run: pip install -r requirements-ci.txt
       - run: pytest tests/ -v --cov=src || true
@@ -33,7 +33,7 @@ jobs:
     needs: unit-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: docker build -t banking-doc-mlops:latest .
       - run: |
           echo "Scanning image for vulnerabilities..."
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           echo "Pushing image to staging registry..."
           echo "Deploying to Kubernetes Staging Cluster..."
