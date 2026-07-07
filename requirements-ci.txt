@@ -15,7 +15,7 @@ pytesseract==0.3.10
 pillow==10.0.0
 
 # Headless CV (no display needed in CI)
-opencv-python-headless==4.8.0.74
+opencv-python-headless==4.6.0.66
 
 # API
 fastapi==0.100.0
