@@ -1,30 +1,58 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  jenkins:
-    image: jenkins/jenkins:lts
-    # Notice we use the LTS Jenkins image
-    container_name: local-jenkins
-    privileged: true
-    user: root # Running as root allows docker-in-docker commands inside the pipeline
-    ports:
-      - "8080:8080" # Jenkins Web UI
-      - "50000:50000"
-    volumes:
-      - jenkins_data:/var/jenkins_home
-      # Mount the Docker socket so Jenkins can build our FastAPI Dockerfile!
-      - /var/run/docker.sock:/var/run/docker.sock
 
-  banking-api-mock:
-    # This allows you to test the dockerfile locally if you want
-    build: .
+  # ── FastAPI document processing service ──────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: banking-doc-api
     ports:
       - "8000:8000"
     volumes:
-      - ./src:/app/src
-      - ./frontend:/app/frontend
+      - ./models:/app/models       # persist trained model artefacts
+      - ./mlruns:/app/mlruns       # share MLflow run data with mlflow service
     environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
       - PYTHONUNBUFFERED=1
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - banking-net
+
+  # ── MLflow tracking server ───────────────────────────────────────────────────
+  mlflow:
+    image: python:3.9-slim
+    container_name: banking-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    command: >
+      bash -c "pip install mlflow --quiet &&
+               mlflow server
+                 --host 0.0.0.0
+                 --port 5000
+                 --backend-store-uri /mlruns
+                 --default-artifact-root /mlruns"
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - banking-net
+
+networks:
+  banking-net:
+    driver: bridge
 
 volumes:
-  jenkins_data:
+  mlruns:
+  models:

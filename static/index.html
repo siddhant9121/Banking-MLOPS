@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banking Document MLOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">🏦</div>
+      <div>
+        <div class="brand-name">Banking DocProcess</div>
+        <div class="brand-sub">ML-Powered KYC &amp; Document Extraction</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-chip" id="api-chip">
+        <span class="status-dot" id="api-dot"></span>
+        <span id="api-label">API</span>
+      </div>
+      <a class="status-chip mlflow-chip" href="http://localhost:5000" target="_blank" rel="noopener">
+        <span class="status-dot dot-blue"></span>
+        MLflow ↗
+      </a>
+      <a class="status-chip docs-chip" href="/docs" target="_blank" rel="noopener">
+        Swagger Docs ↗
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ── Tab nav ────────────────────────────────────────────────────────────── -->
+<nav class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" data-tab="process" onclick="switchTab('process')">
+      📄 Process Document
+    </button>
+    <button class="tab-btn" data-tab="queue" onclick="switchTab('queue')">
+      🔍 Review Queue
+      <span class="badge" id="queue-badge">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- ── Process tab ──────────────────────────────────────────────────────── -->
+  <section id="tab-process" class="tab-pane active">
+    <div class="two-col">
+
+      <!-- Left: Upload -->
+      <div class="card upload-card">
+        <div class="card-header">Upload Document</div>
+
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-icon">📂</div>
+          <div class="drop-title">Drag &amp; drop your file here</div>
+          <div class="drop-sub">or <span class="link" id="browse-link">click to browse</span></div>
+          <div class="drop-types">JPG &nbsp;·&nbsp; PNG &nbsp;·&nbsp; PDF</div>
+          <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.pdf" hidden />
+        </div>
+
+        <div class="file-preview" id="file-preview" hidden>
+          <div class="file-row">
+            <span class="file-thumb" id="file-thumb">📄</span>
+            <div class="file-meta">
+              <div class="file-name" id="file-name">—</div>
+              <div class="file-size" id="file-size">—</div>
+            </div>
+            <button class="icon-btn" onclick="clearFile()" title="Remove">✕</button>
+          </div>
+          <div class="img-preview-wrap" id="img-preview-wrap" hidden>
+            <img id="img-preview" src="" alt="preview" class="img-preview" />
+          </div>
+        </div>
+
+        <button class="process-btn" id="process-btn" onclick="processDocument()" disabled>
+          <span id="btn-text">Process Document</span>
+          <span class="spinner hidden" id="btn-spinner"></span>
+        </button>
+      </div>
+
+      <!-- Right: Result -->
+      <div class="card result-card" id="result-card">
+        <div class="result-placeholder" id="result-placeholder">
+          <div class="placeholder-icon">🔎</div>
+          <div class="placeholder-title">Results will appear here</div>
+          <div class="placeholder-sub">Upload and process a document to extract entities</div>
+        </div>
+
+        <div id="result-content" hidden>
+          <div class="result-header">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <span class="pill pill-doc" id="res-doc-type">—</span>
+              <span class="pill" id="res-authenticity-pill">—</span>
+            </div>
+            <span class="pill" id="res-status-pill">—</span>
+          </div>
+
+          <div class="confidence-section">
+            <div class="confidence-label">
+              <span>Confidence Score</span>
+              <strong id="res-confidence-pct">—</strong>
+            </div>
+            <div class="confidence-track">
+              <div class="confidence-bar" id="res-confidence-bar"></div>
+            </div>
+          </div>
+
+          <div class="entity-grid">
+            <div class="entity-card">
+              <div class="entity-label">👤 Name</div>
+              <div class="entity-value" id="res-name">—</div>
+            </div>
+            <div class="entity-card">
+              <div class="entity-label">🪪 PAN</div>
+              <div class="entity-value mono" id="res-pan">—</div>
+            </div>
+            <div class="entity-card">
+              <div class="entity-label">🎂 Date of Birth</div>
+              <div class="entity-value" id="res-dob">—</div>
+            </div>
+            <div class="entity-card">
+              <div class="entity-label">🆔 Aadhaar</div>
+              <div class="entity-value mono" id="res-aadhaar">—</div>
+            </div>
+            <div class="entity-card">
+              <div class="entity-label">📘 Passport</div>
+              <div class="entity-value mono" id="res-passport">—</div>
+            </div>
+            <div class="entity-card">
+              <div class="entity-label">🚗 Driving Licence</div>
+              <div class="entity-value mono" id="res-dl">—</div>
+            </div>
+            <div class="entity-card">
+              <div class="entity-label">🗳️ Voter ID</div>
+              <div class="entity-value mono" id="res-voterid">—</div>
+            </div>
+            <div class="entity-card entity-card-wide">
+              <div class="entity-label">💰 Amounts Detected</div>
+              <div class="amounts-list" id="res-amounts"></div>
+            </div>
+          </div>
+
+          <div class="doc-id-row">
+            <span class="doc-id-label">Document ID</span>
+            <span class="doc-id-value mono" id="res-doc-id">—</span>
+          </div>
+          <div class="doc-id-row">
+            <span class="doc-id-label">Processed at</span>
+            <span class="doc-id-value" id="res-timestamp">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History strip -->
+    <div class="card history-card" id="history-card" hidden>
+      <div class="card-header">Recent Extractions</div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+  </section>
+
+  <!-- ── Review Queue tab ─────────────────────────────────────────────────── -->
+  <section id="tab-queue" class="tab-pane" hidden>
+    <div class="card">
+      <div class="queue-toolbar">
+        <div class="card-header" style="margin:0">Manual Review Queue</div>
+        <button class="refresh-btn" onclick="loadQueue()">↻ Refresh</button>
+      </div>
+
+      <div id="queue-empty" class="queue-empty" hidden>
+        <div class="placeholder-icon">✅</div>
+        <div class="placeholder-title">Queue is empty</div>
+        <div class="placeholder-sub">All documents have been reviewed or routed automatically</div>
+      </div>
+
+      <table class="queue-table" id="queue-table" hidden>
+        <thead>
+          <tr>
+            <th>Document ID</th>
+            <th>Confidence</th>
+            <th>Reason</th>
+            <th>Time</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="queue-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Toast container ────────────────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

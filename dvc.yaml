@@ -1,0 +1,19 @@
+stages:
+  train_and_evaluate:
+    cmd: python src/train.py --config configs/model_config.yaml
+    deps:
+      - src/train.py
+      - src/ner_data.py
+      - configs/model_config.yaml
+    params:
+      - train.epochs
+      - train.batch_size
+      - train.learning_rate
+      - ner.epochs
+      - ner.batch_size
+      - evaluate.confidence_threshold
+    outs:
+      - models/classifier/best_model.pth:
+          cache: false
+      - models/ner:
+          cache: false

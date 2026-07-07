@@ -1,49 +1,64 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environments
 venv/
+.venv/
 env/
 ENV/
-.venv
 
-# MLflow
-mlruns/
-mlartifacts/
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
 
-# Models
-models/*.pth
-*.pkl
-*.h5
-
-# Data
-data/
-*.csv
-*.json
-*.xml
+# Environment variables
+.env
+.env.*
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+.DS_Store
+
+# ML artefacts (large binaries — track with DVC, not git)
+models/*.pth
+models/*.pt
+models/*.onnx
+models/**/*.safetensors
+mlruns/
+mlflow.db
+
+# Tesseract language data (downloaded, not source — see tessdata/ setup in
+# src/api.py; re-fetch from tesseract-ocr/tessdata_fast if missing)
+tessdata/*.traineddata
+
+# Scratch/debug output
+scratch_*
+
+# Test / coverage
+.pytest_cache/
+htmlcov/
+coverage.xml
+.coverage
+test-results.xml
+
+# DVC
+.dvc/cache
+.dvc/tmp
+
+# Docker
+*.tar
 
 # OS
-.DS_Store
 Thumbs.db
-
-# Logs
-*.log
-logs/
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-
-# Build
-build/
-dist/
-*.egg-info/
